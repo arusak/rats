@@ -198,7 +198,7 @@ window.onload = function () {
 
         // Render self
         draw: function () {
-            ctx.fillStyle = 'rgb(255,255,255)';
+            ctx.fillStyle = this.color;
             ctx.fillRect(this.x, this.y, this.width, this.height);
         },
 
@@ -236,6 +236,10 @@ window.onload = function () {
             for (i = 0; i < rnd(3) + 2; i++) {
                 this.name += parts[rnd(parts.length - 1)];
             }
+
+            this.gender = prob(0.5) ? 'MALE' : 'FEMALE';
+            this.color = this.gender === 'MALE' ? '#69f' : '#f99';
+
         }
     };
 
