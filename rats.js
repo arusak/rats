@@ -1,3 +1,4 @@
+/* global _ */
 window.onload = function () {
     'use strict';
 
@@ -18,8 +19,24 @@ window.onload = function () {
         w: {x: -1, y: 0}
     };
 
+    var Actor = {
+        // Check if coordinate is inside the actor. Accepts 2 numbers or a tuple {x, y}
+        has: function (x, y) {
+
+            if (typeof x === 'object') {
+                y = x.y;
+                x = x.x;
+            }
+
+            return x >= this.x &&
+                x <= this.x + this.width &&
+                y >= this.y &&
+                y <= this.y + this.height;
+        }
+    };
+
     // Static wall
-    var wall = {
+    var Wall = _.extend({}, Actor, {
         update: function () {
         },
         // Render self
@@ -36,23 +53,11 @@ window.onload = function () {
             this.y = y;
             this.width = width;
             this.height = height;
-        },
-        // Check if coordinate is inside the wall. Accepts 2 numbers or an object {x, y}
-        has: function (x, y) {
-            if (typeof x === 'object') {
-                y = x.y;
-                x = x.x;
-            }
-
-            return x >= this.x &&
-                x <= this.x + this.width &&
-                y >= this.y &&
-                y <= this.y + this.height;
         }
-    };
+    });
 
     // Main actor
-    var rat = {
+    var Rat = _.extend({}, Actor, {
         width: 15,
         height: 15,
         direction: 'n', // we need some value to begin looking around
@@ -241,7 +246,7 @@ window.onload = function () {
             this.color = this.gender === 'MALE' ? '#69f' : '#f99';
 
         }
-    };
+    });
 
     var game = {
         width: canvas.width,
@@ -270,7 +275,7 @@ window.onload = function () {
         insideWall: function (coord) {
             var i, inside = false;
 
-            for (i = 0; i < this.walls.length; i+=1) {
+            for (i = 0; i < this.walls.length; i += 1) {
                 if (this.walls[i].has(coord)) {
                     inside = true;
                 }
@@ -285,22 +290,22 @@ window.onload = function () {
 
             // make walls
             for (i = 0; i < 9; i += 1) {
-                o = Object.create(wall);
+                o = Object.create(Wall);
                 o.init(15 * (3 + 17 * (i % 3)), 15 * (3 + 12 * (Math.floor(i / 3))), 15 * 14, 15 * 9);
                 this.walls.push(o);
             }
 
             // grow some rats
             for (i = 0; i < numberOfRats; i += 1) {
-                o = Object.create(rat);
+                o = Object.create(Rat);
                 this.objects.push(o);
                 this.rats.push(o);
 
                 // generate random coordinate until we find one that does not belong to a wall
                 do {
                     coord = {
-                        x: rnd(game.width - rat.width),
-                        y: rnd(game.height - rat.height)
+                        x: rnd(game.width - Rat.width),
+                        y: rnd(game.height - Rat.height)
                     };
                 } while (this.insideWall(coord));
 
