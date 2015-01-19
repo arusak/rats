@@ -1,0 +1,30 @@
+For Release A
+-------------
+
++Initialize game
++Add some rats
++Add some walls
++Teach rats to avoid walls
++Make rats appear only between walls
++Let rats have gender
+…Teach rats to meet each other
+Teach rats to make love
+Add pregnancy period
+Learn rats to give birth
+Create poison
+Learn rats to eat
+Make rats mortal
+Quantize rats' movement and make narrower tunnels
+Teach rats to explore new tunnels and prefer turning aourn the corner instead of turning back
+
+Planned for Release B
+---------------------
+
+Add graphics for rats, walls, poison
+Add new threats
+Design a better labyrinth
+
+Planned for Release C
+---------------------
+
+Make field bigger and scrollable
