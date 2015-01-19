@@ -21,17 +21,40 @@ window.onload = function () {
 
     var Actor = {
         // Check if coordinate is inside the actor. Accepts 2 numbers or a tuple {x, y}
-        has: function (x, y) {
+        has: function () {
+            var self = this;
+            var o;
 
-            if (typeof x === 'object') {
-                y = x.y;
-                x = x.x;
+            // Check if a coordinate is within actor
+            function simple(x, y) {
+                return x >= self.x &&
+                    x <= self.x + self.width &&
+                    y >= self.y &&
+                    y <= self.y + self.height;
             }
 
-            return x >= this.x &&
-                x <= this.x + this.width &&
-                y >= this.y &&
-                y <= this.y + this.height;
+            if (typeof arguments[0] === 'number' && typeof arguments[1] === 'number') {
+                // just a pair of coordinates
+                return simple(arguments[0], arguments[1].y);
+            }
+
+            if (typeof arguments[0] === 'object') {
+                o = arguments[0];
+
+                // object with coordinates
+                if (o.x !== undefined && o.y !== undefined) {
+                    return simple(o.x, o.y);
+                }
+
+                // corners
+                if (o.nw !== undefined) {
+                    return simple(o.nw.x, o.nw.y) ||
+                        simple(o.sw.x, o.sw.y) ||
+                        simple(o.ne.x, o.ne.y) ||
+                        simple(o.se.x, o.se.y);
+                }
+            }
+
         }
     };
 
@@ -58,12 +81,15 @@ window.onload = function () {
 
     // Main actor
     var Rat = _.extend({}, Actor, {
+        id: 0, // initial id
+
         width: 15,
         height: 15,
         direction: 'n', // we need some value to begin looking around
         speed: 3, // scalar speed
 
         timers: {}, // any timers go here
+        meeting: {}, // the rats we are meeting
 
         // Measure coordinates change
         getVelocity: function () {
@@ -80,7 +106,7 @@ window.onload = function () {
 
         // Where our new corners will be
         getNewCorners: function () {
-            return this.getCorners({x: 0, y: 0});
+            return this.getCorners(this.getVelocity());
         },
 
         // Where our corners are
@@ -97,6 +123,10 @@ window.onload = function () {
 
         // Where our edges are
         getEdges: function (velocity) {
+            if (!velocity) {
+                velocity = {x: 0, y: 0};
+            }
+
             return {
                 e: this.x + this.width + velocity.x,
                 s: this.y + this.height + velocity.y,
@@ -201,6 +231,25 @@ window.onload = function () {
             this.sleeping = false;
         },
 
+        meet: function () {
+            var i;
+            var otherRat;
+
+            for (i = 0; i < game.rats.length; i += 1) {
+                if (game.rats[i] !== this) {
+                    otherRat = game.rats[i];
+                    if (this.has(otherRat.getCorners())) {
+                        if (!this.meeting[otherRat.id]) {
+                            this.meeting[otherRat.id] = true;
+                            this.say('hello ' + otherRat.name);
+                        }
+                    } else {
+                        this.meeting[otherRat.id] = false;
+                    }
+                }
+            }
+        },
+
         // Render self
         draw: function () {
             ctx.fillStyle = this.color;
@@ -209,6 +258,7 @@ window.onload = function () {
 
         // Do this every tick
         update: function () {
+            this.meet();
             this.look();
             this.chooseDirection(this.direction);
 
@@ -235,6 +285,9 @@ window.onload = function () {
 
             this.x = x;
             this.y = y;
+
+            this.id = Rat.id;
+            Rat.id += 1;
 
             // make self a name
             this.name = '';
