@@ -3,14 +3,20 @@ window.onload = function () {
     'use strict';
 
     // settings
-    var numberOfRats = 10;
-    var baseSpeed = 2;
-    var cellSize = baseSpeed * 8;
-    var rerouteProbability = 0.02;
-    var speedChangeProbability = 0;
-    var sleepProbability = 0.005; // happens on average every 200 ticks
+    var settings = {
+        numberOfRats: 10,
+        baseSpeed: 2,
+        rerouteProbability: 0.5,
+        reverseProbability: 0.02,
+        speedChangeProbability: 0,
+        sleepProbability: 0.005
+    };
+
+    settings.cellSize = settings.baseSpeed * 8;
 
     var canvas = document.getElementById('canvas');
+    canvas.style.width= canvas.width + 'px';
+    canvas.style.height= canvas.height + 'px';
     var ctx = canvas.getContext('2d');
 
     // velocity sign for each direction
@@ -19,6 +25,21 @@ window.onload = function () {
         e: {x: +1, y: 0},
         s: {x: 0, y: +1},
         w: {x: -1, y: 0}
+    };
+
+    // it's preffered to change axis when possible
+    var preferredDirections = {
+        n: ['w', 'e'],
+        s: ['w', 'e'],
+        w: ['n', 's'],
+        e: ['n', 's']
+    };
+
+    var reverseDirections = {
+        n: 's',
+        s: 'n',
+        w: 'e',
+        e: 'w'
     };
 
     var Actor = {
@@ -85,10 +106,10 @@ window.onload = function () {
     var Rat = _.extend({}, Actor, {
         id: 0, // initial id
 
-        width: cellSize,
-        height: cellSize,
+        width: settings.cellSize,
+        height: settings.cellSize,
         direction: 'n', // we need some value to begin looking around
-        speed: baseSpeed, // scalar speed
+        speed: settings.baseSpeed, // scalar speed
 
         timers: {}, // any timers go here
         meeting: {}, // the rats we are meeting
@@ -172,12 +193,38 @@ window.onload = function () {
          * @param [direction] previous direction.
          */
         chooseDirection: function (direction) {
-            // no argument or argument is impossible or chance
-            if (!direction || this.possibleDirections.indexOf(direction) < 0 || prob(rerouteProbability)) {
-                this.direction = this.possibleDirections[rnd(this.possibleDirections.length - 1)];
-                //this.say('heading ' + this.direction + ', possible: ' + this.possibleDirections);
+            var suggested;
+            var self = this;
+
+            function chooseRandomly() {
+                self.direction = rnd(self.possibleDirections);
+            }
+
+            function tryToKeepStraight() {
+                if (self.possibleDirections.indexOf(direction) >= 0) {
+                    self.direction = direction;
+                } else {
+                    chooseRandomly();
+                }
+            }
+
+            if (direction) {
+                suggested = _.intersection(this.possibleDirections, preferredDirections[direction]);
+                if (suggested.length > 0) {
+                    if (prob(settings.rerouteProbability)) {
+                        this.direction = rnd(suggested);
+                    } else {
+                        tryToKeepStraight();
+                    }
+                } else {
+                    if (prob(settings.reverseProbability)) {
+                        this.direction = reverseDirections[direction];
+                    } else {
+                        tryToKeepStraight();
+                    }
+                }
             } else {
-                this.direction = direction;
+                chooseRandomly();
             }
 
             if (!this.direction) {
@@ -192,15 +239,15 @@ window.onload = function () {
             var v;
 
             // speed fluctuates
-            if (this.x % cellSize === 0 && prob(speedChangeProbability)) {
-                if (this.speed === baseSpeed) {
+            if (this.x % settings.cellSize === 0 && prob(settings.speedChangeProbability)) {
+                if (this.speed === settings.baseSpeed) {
                     if (prob(0.5)) {
-                        this.speed = baseSpeed / 2;
+                        this.speed = settings.baseSpeed / 2;
                     } else {
-                        this.speed = baseSpeed * 2;
+                        this.speed = settings.baseSpeed * 2;
                     }
                 } else {
-                    this.speed = baseSpeed;
+                    this.speed = settings.baseSpeed;
                 }
             }
 
@@ -256,7 +303,7 @@ window.onload = function () {
         update: function () {
             this.look();
             this.meet();
-            if (this.x % cellSize === 0 && this.y % cellSize === 0) {
+            if (this.x % settings.cellSize === 0 && this.y % settings.cellSize === 0) {
                 this.chooseDirection(this.direction);
             }
 
@@ -264,7 +311,7 @@ window.onload = function () {
                 // if me don't sleep, me move
                 this.move();
                 // but sometimes me may fall asleep
-                if (prob(sleepProbability)) {
+                if (prob(settings.sleepProbability)) {
                     this.sleep(rnd(100) + 10);
                 }
             } else {
@@ -341,22 +388,22 @@ window.onload = function () {
             var wallWidth = 7;
             var wallHeight = 7;
             var wallGap = 1;
-            var numberOfRows = Math.floor(game.height / ((wallHeight + wallGap) * cellSize));
-            var numberOfCols = Math.floor(game.width / ((wallWidth + wallGap) * cellSize));
+            var numberOfRows = Math.floor(game.height / ((wallHeight + wallGap) * settings.cellSize));
+            var numberOfCols = Math.floor(game.width / ((wallWidth + wallGap) * settings.cellSize));
 
             // make walls
             for (i = 0; i < numberOfRows * numberOfCols; i += 1) {
                 o = Object.create(Wall);
                 o.init(
-                    cellSize * (wallGap + (wallWidth + wallGap) * (i % numberOfCols)),
-                    cellSize * (wallGap + (wallHeight + wallGap) * Math.floor(i / numberOfCols)),
-                    cellSize * wallWidth,
-                    cellSize * wallHeight);
+                    settings.cellSize * (wallGap + (wallWidth + wallGap) * (i % numberOfCols)),
+                    settings.cellSize * (wallGap + (wallHeight + wallGap) * Math.floor(i / numberOfCols)),
+                    settings.cellSize * wallWidth,
+                    settings.cellSize * wallHeight);
                 this.walls.push(o);
             }
 
             // grow some rats
-            for (i = 0; i < numberOfRats; i += 1) {
+            for (i = 0; i < settings.numberOfRats; i += 1) {
                 o = Object.create(Rat);
                 this.objects.push(o);
                 this.rats.push(o);
@@ -364,8 +411,8 @@ window.onload = function () {
                 // generate random coordinate until we find one that does not belong to a wall
                 do {
                     coord = {
-                        x: rnd(Math.floor(game.width / cellSize) - 1) * cellSize,
-                        y: rnd(Math.floor(game.height / cellSize) - 1) * cellSize
+                        x: rnd(Math.floor(game.width / settings.cellSize) - 1) * settings.cellSize,
+                        y: rnd(Math.floor(game.height / settings.cellSize) - 1) * settings.cellSize
                     };
                 } while (this.insideWall(coord));
 
@@ -386,12 +433,16 @@ window.onload = function () {
     }
 
     /**
-     * Returns a random integer from [0..n]
-     * @param n
-     * @returns {number}
+     * Returns a random integer from [0..arg]
+     * @param arg
+     * @returns {number|Array}
      */
-    function rnd(n) {
-        return Math.floor(Math.random() * (n + 1));
+    function rnd(arg) {
+        if (typeof arg === 'number') {
+            return Math.floor(Math.random() * (arg + 1));
+        } else if (Array.isArray(arg)) {
+            return arg[rnd(arg.length - 1)];
+        }
     }
 
     /**
