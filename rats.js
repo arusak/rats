@@ -7,7 +7,7 @@ window.onload = function () {
     var baseSpeed = 2;
     var cellSize = baseSpeed * 8;
     var rerouteProbability = 0.02;
-    var speedChangeProbability = 0.4;
+    var speedChangeProbability = 0;
     var sleepProbability = 0.005; // happens on average every 200 ticks
 
     var canvas = document.getElementById('canvas');
@@ -29,10 +29,10 @@ window.onload = function () {
 
             // Check if a coordinate is within actor
             function simple(x, y) {
-                return x >= self.x &&
-                    x <= self.x + self.width &&
-                    y >= self.y &&
-                    y <= self.y + self.height;
+                return x > self.x &&
+                    x < self.x + self.width &&
+                    y > self.y &&
+                    y < self.y + self.height;
             }
 
             if (typeof arguments[0] === 'number' && typeof arguments[1] === 'number') {
@@ -95,20 +95,17 @@ window.onload = function () {
 
         // Measure coordinates change
         getVelocity: function () {
-            return {
-                x: (velocitySigns[this.direction]).x * this.speed,
-                y: (velocitySigns[this.direction]).y * this.speed
-            };
+            return makeVelocity(this.direction, this.speed);
         },
 
-        // Where our new edges will be
-        getNewEdges: function () {
-            return this.getEdges(this.getVelocity());
+        // Where our new edges will be if we go in stated direction with speed
+        getNewEdges: function (direction, speed) {
+            return this.getEdges(makeVelocity(direction, speed));
         },
 
-        // Where our new corners will be
-        getNewCorners: function () {
-            return this.getCorners(this.getVelocity());
+        // Where our new corners will be if we go in stated direction with speed
+        getNewCorners: function (direction, speed) {
+            return this.getCorners(makeVelocity(direction, speed));
         },
 
         // Where our corners are
@@ -140,25 +137,23 @@ window.onload = function () {
         // Have a look around and see which directions are available
         look: function () {
             var self = this;
-            var edges = this.getNewEdges();
-            var corners = this.getNewCorners();
 
             // check with game borders
             var directions = {
-                e: edges.e <= game.width,
-                s: edges.s <= game.height,
-                n: edges.n >= 0,
-                w: edges.w >= 0
+                e: this.getNewEdges('e', this.speed).e <= game.width,
+                s: this.getNewEdges('s', this.speed).s <= game.height,
+                n: this.getNewEdges('n', this.speed).n >= 0,
+                w: this.getNewEdges('w', this.speed).w >= 0
             };
 
             this.possibleDirections = [];
 
             // check with walls (will one of my front edges will be inside any wall?)
             game.walls.forEach(function (wall) {
-                directions.e = directions.e && !wall.has(corners.ne) && !wall.has(corners.se);
-                directions.s = directions.s && !wall.has(corners.se) && !wall.has(corners.sw);
-                directions.n = directions.n && !wall.has(corners.ne) && !wall.has(corners.nw);
-                directions.w = directions.w && !wall.has(corners.nw) && !wall.has(corners.sw);
+                directions.e = directions.e && !wall.has(self.getNewCorners('e', self.speed).ne) && !wall.has(self.getNewCorners('e', self.speed).se);
+                directions.s = directions.s && !wall.has(self.getNewCorners('s', self.speed).se) && !wall.has(self.getNewCorners('s', self.speed).sw);
+                directions.n = directions.n && !wall.has(self.getNewCorners('n', self.speed).ne) && !wall.has(self.getNewCorners('n', self.speed).nw);
+                directions.w = directions.w && !wall.has(self.getNewCorners('w', self.speed).nw) && !wall.has(self.getNewCorners('w', self.speed).sw);
             });
 
             // make an array of possible directions
@@ -242,7 +237,7 @@ window.onload = function () {
                     if (this.has(otherRat.getCorners())) {
                         if (!this.meeting[otherRat.id]) {
                             this.meeting[otherRat.id] = true;
-                            this.say('hello ' + otherRat.name);
+                            //this.say('hello ' + otherRat.name);
                         }
                     } else {
                         this.meeting[otherRat.id] = false;
@@ -259,9 +254,11 @@ window.onload = function () {
 
         // Do this every tick
         update: function () {
-            this.meet();
             this.look();
-            this.chooseDirection(this.direction);
+            this.meet();
+            if (this.x % cellSize === 0 && this.y % cellSize === 0) {
+                this.chooseDirection(this.direction);
+            }
 
             if (!this.sleeping) {
                 // if me don't sleep, me move
@@ -343,9 +340,9 @@ window.onload = function () {
             var coord = {};
             var wallWidth = 7;
             var wallHeight = 7;
-            var wallGap = 2;
-            var numberOfRows = Math.floor(game.height / ((wallHeight + wallGap)*cellSize));
-            var numberOfCols = Math.floor(game.width / ((wallWidth + wallGap)*cellSize));
+            var wallGap = 1;
+            var numberOfRows = Math.floor(game.height / ((wallHeight + wallGap) * cellSize));
+            var numberOfCols = Math.floor(game.width / ((wallWidth + wallGap) * cellSize));
 
             // make walls
             for (i = 0; i < numberOfRows * numberOfCols; i += 1) {
@@ -367,8 +364,8 @@ window.onload = function () {
                 // generate random coordinate until we find one that does not belong to a wall
                 do {
                     coord = {
-                        x: rnd(game.width - Rat.width),
-                        y: rnd(game.height - Rat.height)
+                        x: rnd(Math.floor(game.width / cellSize) - 1) * cellSize,
+                        y: rnd(Math.floor(game.height / cellSize) - 1) * cellSize
                     };
                 } while (this.insideWall(coord));
 
@@ -404,6 +401,13 @@ window.onload = function () {
      */
     function prob(p) {
         return Math.random() < p;
+    }
+
+    function makeVelocity(direction, speed) {
+        return {
+            x: (velocitySigns[direction]).x * speed,
+            y: (velocitySigns[direction]).y * speed
+        };
     }
 
     game.init();
