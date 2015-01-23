@@ -5,11 +5,16 @@ body {
 }
 
 #canvas {
-    background: url(grid.png) repeat 0 0;
-    border: thin solid #d0d0d0;
+    background-color:#222;
+    background-image:
+    linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px);
+    background-position:-1px -1px, -1px -1px;
+	background-size: 16px 16px, 16px 16px;
+	border: thin solid #d0d0d0;
     margin: 0 auto;
-    width: 810px;
-    height: 600px;
+    width: 752px;
+    height: 608px;
     display: block;
 }
 

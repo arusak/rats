@@ -4,8 +4,10 @@ window.onload = function () {
 
     // settings
     var numberOfRats = 10;
+    var baseSpeed = 2;
+    var cellSize = baseSpeed * 8;
     var rerouteProbability = 0.02;
-    var speedChangeProbability = 0.1;
+    var speedChangeProbability = 0.4;
     var sleepProbability = 0.005; // happens on average every 200 ticks
 
     var canvas = document.getElementById('canvas');
@@ -83,10 +85,10 @@ window.onload = function () {
     var Rat = _.extend({}, Actor, {
         id: 0, // initial id
 
-        width: 15,
-        height: 15,
+        width: cellSize,
+        height: cellSize,
         direction: 'n', // we need some value to begin looking around
-        speed: 3, // scalar speed
+        speed: baseSpeed, // scalar speed
 
         timers: {}, // any timers go here
         meeting: {}, // the rats we are meeting
@@ -195,17 +197,16 @@ window.onload = function () {
             var v;
 
             // speed fluctuates
-            if (prob(speedChangeProbability)) {
-                this.speed += (1 - rnd(2));
-            }
-
-            // calm down to speedy rat
-            if (this.speed > 5) {
-                this.speed -= 1;
-            }
-            // speed up to slow rat
-            if (this.speed < 1) {
-                this.speed += 1;
+            if (this.x % cellSize === 0 && prob(speedChangeProbability)) {
+                if (this.speed === baseSpeed) {
+                    if (prob(0.5)) {
+                        this.speed = baseSpeed / 2;
+                    } else {
+                        this.speed = baseSpeed * 2;
+                    }
+                } else {
+                    this.speed = baseSpeed;
+                }
             }
 
             v = this.getVelocity();
@@ -340,11 +341,20 @@ window.onload = function () {
         init: function () {
             var i, o;
             var coord = {};
+            var wallWidth = 7;
+            var wallHeight = 7;
+            var wallGap = 2;
+            var numberOfRows = Math.floor(game.height / ((wallHeight + wallGap)*cellSize));
+            var numberOfCols = Math.floor(game.width / ((wallWidth + wallGap)*cellSize));
 
             // make walls
-            for (i = 0; i < 9; i += 1) {
+            for (i = 0; i < numberOfRows * numberOfCols; i += 1) {
                 o = Object.create(Wall);
-                o.init(15 * (3 + 17 * (i % 3)), 15 * (3 + 12 * (Math.floor(i / 3))), 15 * 14, 15 * 9);
+                o.init(
+                    cellSize * (wallGap + (wallWidth + wallGap) * (i % numberOfCols)),
+                    cellSize * (wallGap + (wallHeight + wallGap) * Math.floor(i / numberOfCols)),
+                    cellSize * wallWidth,
+                    cellSize * wallHeight);
                 this.walls.push(o);
             }
 
