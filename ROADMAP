@@ -7,7 +7,7 @@ For Release A
 +Teach rats to avoid walls
 +Make rats appear only between walls
 +Let rats have gender
-Move walls to a separate layer for performance optimization
++Move walls to a separate canvas for better performance
 …Teach rats to meet each other
 Teach rats to make love
 Add pregnancy period

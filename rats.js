@@ -2,9 +2,17 @@
 window.onload = function () {
     'use strict';
 
-    // settings
-    var settings = {
-        numberOfRats: 20,
+    var settings,
+        canvasesContainer,
+        ratCanvas,
+        wallCanvas,
+        ratCtx,
+        wallCtx;
+
+    settings = {
+        width: 784,
+        height: 656,
+        numberOfRats: 10,
         baseSpeed: 2,
         rerouteProbability: 0.5,
         reverseProbability: 0.02,
@@ -14,10 +22,25 @@ window.onload = function () {
 
     settings.cellSize = settings.baseSpeed * 8;
 
-    var canvas = document.getElementById('canvas');
-    canvas.style.width= canvas.width + 'px';
-    canvas.style.height= canvas.height + 'px';
-    var ctx = canvas.getContext('2d');
+    canvasesContainer = document.getElementById('canvases');
+    canvasesContainer.style.width = settings.width + 'px';
+    canvasesContainer.style.height = settings.height + 'px';
+
+    ratCanvas = document.createElement('canvas');
+    ratCanvas.width = settings.width;
+    ratCanvas.height = settings.height;
+    ratCanvas.style.width = settings.width + 'px';
+    ratCanvas.style.height = settings.height + 'px';
+    canvasesContainer.appendChild(ratCanvas);
+    ratCtx = ratCanvas.getContext('2d');
+
+    wallCanvas = document.createElement('canvas');
+    wallCanvas.width = settings.width;
+    wallCanvas.height = settings.height;
+    wallCanvas.style.width = settings.width + 'px';
+    wallCanvas.style.height = settings.height + 'px';
+    canvasesContainer.appendChild(wallCanvas);
+    wallCtx = wallCanvas.getContext('2d');
 
     // velocity sign for each direction
     var velocitySigns = {
@@ -87,11 +110,6 @@ window.onload = function () {
         },
         // Render self
         draw: function () {
-            ctx.fillStyle = '#000';
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 1;
-            ctx.fillRect(this.x, this.y, this.width, this.height);
-            ctx.strokeRect(this.x, this.y, this.width, this.height);
         },
         // Set object position and size
         init: function (x, y, width, height) {
@@ -99,6 +117,12 @@ window.onload = function () {
             this.y = y;
             this.width = width;
             this.height = height;
+
+            wallCtx.fillStyle = '#000';
+            wallCtx.strokeStyle = '#fff';
+            wallCtx.lineWidth = 1;
+            wallCtx.fillRect(this.x, this.y, this.width, this.height);
+            wallCtx.strokeRect(this.x, this.y, this.width, this.height);
         }
     });
 
@@ -295,8 +319,8 @@ window.onload = function () {
 
         // Render self
         draw: function () {
-            ctx.fillStyle = this.color;
-            ctx.fillRect(this.x, this.y, this.width, this.height);
+            ratCtx.fillStyle = this.color;
+            ratCtx.fillRect(this.x, this.y, this.width, this.height);
         },
 
         // Do this every tick
@@ -347,15 +371,15 @@ window.onload = function () {
     });
 
     var game = {
-        width: canvas.width,
-        height: canvas.height,
+        width: ratCanvas.width,
+        height: ratCanvas.height,
 
         objects: [],
         rats: [],
         walls: [],
 
         draw: function () {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ratCtx.clearRect(0, 0, ratCanvas.width, ratCanvas.height);
 
             for (var i = 0; i < this.objects.length; i++) {
                 this.objects[i].draw();

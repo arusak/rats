@@ -4,7 +4,8 @@ body {
     text-align: center;
 }
 
-#canvas {
+#canvases {
+    position: relative;
     background-color:#222;
     background-image:
     linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px),
@@ -14,6 +15,12 @@ body {
 	border: thin solid #d0d0d0;
     margin: 0 auto;
     display: block;
+}
+
+#canvases canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
 }
 
 #toolbar {
