@@ -4,7 +4,7 @@ window.onload = function () {
 
     // settings
     var settings = {
-        numberOfRats: 10,
+        numberOfRats: 20,
         baseSpeed: 2,
         rerouteProbability: 0.5,
         reverseProbability: 0.02,
@@ -382,6 +382,29 @@ window.onload = function () {
             return inside;
         },
 
+        // update FPS counter
+        updateFps: function () {
+            var time = (new Date()).getTime();
+
+            // init
+            if (!this.fixedTime) {
+                this.fixedTime = time;
+                this.frameCount = 0;
+            }
+
+            this.frameCount += 1;
+
+            // if a second has passed
+            if (time - this.fixedTime > 1000) {
+                // show fps
+                document.getElementById('fps-value').innerHTML = (this.frameCount - this.fixedFrame).toString();
+                // update counters
+                this.fixedTime = time;
+                this.fixedFrame = this.frameCount;
+            }
+
+        },
+
         init: function () {
             var i, o;
             var coord = {};
@@ -427,6 +450,7 @@ window.onload = function () {
      * Main loop
      */
     function tick() {
+        game.updateFps();
         game.draw();
         game.update();
         requestAnimationFrame(tick);

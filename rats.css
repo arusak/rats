@@ -20,3 +20,11 @@ body {
     margin: 1em auto;
     width: 795px;
 }
+
+#fps {
+    position: fixed;
+    top: 0;
+    right: 0;
+    padding: 6px;
+    color: #777;
+}

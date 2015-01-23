@@ -7,6 +7,7 @@ For Release A
 +Teach rats to avoid walls
 +Make rats appear only between walls
 +Let rats have gender
+Move walls to a separate layer for performance optimization
 …Teach rats to meet each other
 Teach rats to make love
 Add pregnancy period
@@ -14,6 +15,7 @@ Learn rats to give birth
 Create poison
 Learn rats to eat
 Make rats mortal
+Add win and lose condition
 +Quantize rats' movement and make narrower tunnels
 +Teach rats to explore new tunnels and prefer turning round the corner instead of turning back
 
