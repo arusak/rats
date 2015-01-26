@@ -518,13 +518,29 @@ window.onload = function () {
         },
         release: function () {
             var i;
-            var buttons = document.getElementsByClassName('button');
 
             this.tool = null;
 
-            for (i = 0; i < buttons.length; i += 1) {
-                buttons[i].classList.remove('active');
+            for (i = 0; i < this.buttons.length; i += 1) {
+                this.buttons[i].classList.remove('active');
             }
+        },
+        init: function () {
+            var i, button;
+
+            function buttonClick(evt) {
+                var id = evt.toElement.id;
+                game.tool = id;
+                toolbar.push(id);
+            }
+
+            this.node = document.getElementById('toolbar');
+            this.buttons = this.node.getElementsByClassName('button');
+
+            for (i = 0; i < this.buttons.length; i += 1) {
+                this.buttons[i].addEventListener('click', buttonClick);
+            }
+
         }
     };
 
@@ -569,12 +585,8 @@ window.onload = function () {
     }
 
     game.init();
+    toolbar.init();
     tick();
-
-    document.getElementById('poison').addEventListener('click', function () {
-        game.tool = 'poison';
-        toolbar.push('poison');
-    });
 
     canvasesContainer.addEventListener('click', function (evt) {
         game.clicked = {
