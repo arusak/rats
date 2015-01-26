@@ -35,3 +35,11 @@ body {
     padding: 6px;
     color: #777;
 }
+
+#toolbar .button {
+	border-width: 3px;
+}
+
+#toolbar .button.active {
+	border-width: 0;
+}

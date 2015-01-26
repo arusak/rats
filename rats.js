@@ -4,10 +4,9 @@ window.onload = function () {
 
     var settings,
         canvasesContainer,
-        ratCanvas,
-        wallCanvas,
         ratCtx,
-        wallCtx;
+        wallCtx,
+        itemCtx;
 
     settings = {
         width: 784,
@@ -26,21 +25,19 @@ window.onload = function () {
     canvasesContainer.style.width = settings.width + 'px';
     canvasesContainer.style.height = settings.height + 'px';
 
-    ratCanvas = document.createElement('canvas');
-    ratCanvas.width = settings.width;
-    ratCanvas.height = settings.height;
-    ratCanvas.style.width = settings.width + 'px';
-    ratCanvas.style.height = settings.height + 'px';
-    canvasesContainer.appendChild(ratCanvas);
-    ratCtx = ratCanvas.getContext('2d');
+    function addCanvas() {
+        var canvas = document.createElement('canvas');
+        canvas.width = settings.width;
+        canvas.height = settings.height;
+        canvas.style.width = settings.width + 'px';
+        canvas.style.height = settings.height + 'px';
+        canvasesContainer.appendChild(canvas);
+        return canvas.getContext('2d');
+    }
 
-    wallCanvas = document.createElement('canvas');
-    wallCanvas.width = settings.width;
-    wallCanvas.height = settings.height;
-    wallCanvas.style.width = settings.width + 'px';
-    wallCanvas.style.height = settings.height + 'px';
-    canvasesContainer.appendChild(wallCanvas);
-    wallCtx = wallCanvas.getContext('2d');
+    wallCtx = addCanvas();
+    itemCtx = addCanvas();
+    ratCtx = addCanvas();
 
     // velocity sign for each direction
     var velocitySigns = {
@@ -66,6 +63,10 @@ window.onload = function () {
     };
 
     var Actor = {
+        update: function () {
+        },
+        draw: function () {
+        },
         // Check if coordinate is inside the actor. Accepts 2 numbers or a tuple {x, y}
         has: function () {
             var self = this;
@@ -370,16 +371,39 @@ window.onload = function () {
         }
     });
 
+    var Item = _.extend({}, Actor, {
+        initItem: function (x, y) {
+            this.x = Math.floor(x / settings.cellSize) * settings.cellSize;
+            this.y = Math.floor(y / settings.cellSize) * settings.cellSize;
+            this.width = settings.cellSize;
+            this.height = settings.cellSize;
+
+            itemCtx.fillStyle = this.color;
+            itemCtx.fillRect(this.x, this.y, this.width, this.height);
+        },
+        destroy: function () {
+            itemCtx.clearRect(this.x, this.y, this.width, this.height);
+        }
+    });
+
+    var Poison = _.extend({}, Item, {
+        init: function (x, y) {
+            this.color = '#0f0';
+            this.initItem(x, y);
+        }
+    });
+
     var game = {
-        width: ratCanvas.width,
-        height: ratCanvas.height,
+        width: settings.width,
+        height: settings.height,
 
         objects: [],
         rats: [],
         walls: [],
+        items: [],
 
         draw: function () {
-            ratCtx.clearRect(0, 0, ratCanvas.width, ratCanvas.height);
+            ratCtx.clearRect(0, 0, settings.width, settings.height);
 
             for (var i = 0; i < this.objects.length; i++) {
                 this.objects[i].draw();
@@ -391,6 +415,22 @@ window.onload = function () {
                 this.objects[i].update();
             }
 
+        },
+
+        processInput: function () {
+            var item;
+
+            if (this.clicked) {
+                if (this.tool === 'poison') {
+                    item = Object.create(Poison);
+                    item.init(this.clicked.x, this.clicked.y);
+                    this.items.push(item);
+                    this.tool = null;
+                }
+
+                this.clicked = null;
+                toolbar.release();
+            }
         },
 
         // check if any wall contains the coordinate
@@ -470,6 +510,24 @@ window.onload = function () {
         }
     };
 
+    var toolbar = {
+        push: function (tool) {
+            this.tool = tool;
+            this.release();
+            document.getElementById(tool).classList.add('active');
+        },
+        release: function () {
+            var i;
+            var buttons = document.getElementsByClassName('button');
+
+            this.tool = null;
+
+            for (i = 0; i < buttons.length; i += 1) {
+                buttons[i].classList.remove('active');
+            }
+        }
+    };
+
     /**
      * Main loop
      */
@@ -477,6 +535,7 @@ window.onload = function () {
         game.updateFps();
         game.draw();
         game.update();
+        game.processInput();
         requestAnimationFrame(tick);
     }
 
@@ -512,4 +571,15 @@ window.onload = function () {
     game.init();
     tick();
 
+    document.getElementById('poison').addEventListener('click', function () {
+        game.tool = 'poison';
+        toolbar.push('poison');
+    });
+
+    canvasesContainer.addEventListener('click', function (evt) {
+        game.clicked = {
+            x: evt.clientX - canvasesContainer.offsetLeft,
+            y: evt.clientY - canvasesContainer.offsetTop
+        };
+    });
 };
