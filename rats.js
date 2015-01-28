@@ -11,12 +11,12 @@ window.onload = function () {
     settings = {
         width: 784,
         height: 656,
-        numberOfRats: 10,
+        numberOfRats: 1,
         baseSpeed: 2,
         rerouteProbability: 0.5,
         reverseProbability: 0.02,
         speedChangeProbability: 0,
-        sleepProbability: 0.005
+        sleepProbability: 0.003
     };
 
     settings.cellSize = settings.baseSpeed * 8;
@@ -67,26 +67,41 @@ window.onload = function () {
         },
         draw: function () {
         },
-        // Check if coordinate is inside the actor. Accepts 2 numbers or a tuple {x, y}
+        /**
+         * Check if coordinate is inside the actor.
+         * @param coordinates 2 numbers, a tuple {x, y}, or edges {nw, nw, sw, se}
+         * @param {boolean} includeEdges include actor's edges into comparison
+         * @returns {boolean}
+         */
         has: function () {
             var self = this;
+            var includeEdges;
             var o;
 
             // Check if a coordinate is within actor
             function simple(x, y) {
-                return x > self.x &&
-                    x < self.x + self.width &&
-                    y > self.y &&
-                    y < self.y + self.height;
+                if (includeEdges) {
+                    return x >= self.x &&
+                        x <= self.x + self.width &&
+                        y >= self.y &&
+                        y <= self.y + self.height;
+                } else {
+                    return x > self.x &&
+                        x < self.x + self.width &&
+                        y > self.y &&
+                        y < self.y + self.height;
+                }
             }
 
+            // just a pair of coordinates
             if (typeof arguments[0] === 'number' && typeof arguments[1] === 'number') {
-                // just a pair of coordinates
-                return simple(arguments[0], arguments[1].y);
+                includeEdges = arguments[2];
+                return simple(arguments[0], arguments[1]);
             }
 
             if (typeof arguments[0] === 'object') {
                 o = arguments[0];
+                includeEdges = arguments[1];
 
                 // object with coordinates
                 if (o.x !== undefined && o.y !== undefined) {
@@ -138,6 +153,7 @@ window.onload = function () {
 
         timers: {}, // any timers go here
         meeting: {}, // the rats we are meeting
+        callbacks: {}, // callbacks for timers
 
         // Measure coordinates change
         getVelocity: function () {
@@ -207,6 +223,19 @@ window.onload = function () {
                 if (directions[direction]) {
                     self.possibleDirections.push(direction);
                 }
+            });
+
+            game.items.forEach(function (item) {
+                if (item.has(self.getCorners(), true) && item.consumable) {
+                    self.consume(item);
+                    item.consumable = false;
+                }
+            });
+        },
+
+        consume: function (item) {
+            this.sleep(60, function () {
+                item.destroy();
             });
         },
 
@@ -289,14 +318,19 @@ window.onload = function () {
         },
 
         // Sleep for a number of ticks
-        sleep: function (time) {
+        sleep: function (time, callback) {
             this.timers.sleep = time;
             this.sleeping = true;
+            this.callbacks.sleep = callback;
         },
 
         // Stop sleeping
         wake: function () {
             this.sleeping = false;
+
+            if (typeof this.callbacks.sleep === 'function') {
+                this.callbacks.sleep();
+            }
         },
 
         meet: function () {
@@ -382,6 +416,7 @@ window.onload = function () {
             itemCtx.fillRect(this.x, this.y, this.width, this.height);
         },
         destroy: function () {
+            game.destroyObject(this, 'item');
             itemCtx.clearRect(this.x, this.y, this.width, this.height);
         }
     });
@@ -389,6 +424,7 @@ window.onload = function () {
     var Poison = _.extend({}, Item, {
         init: function (x, y) {
             this.color = '#0f0';
+            this.consumable = true;
             this.initItem(x, y);
         }
     });
@@ -435,7 +471,8 @@ window.onload = function () {
 
         // check if any wall contains the coordinate
         insideWall: function (coord) {
-            var i, inside = false;
+            var i;
+            var inside = false;
 
             for (i = 0; i < this.walls.length; i += 1) {
                 if (this.walls[i].has(coord)) {
@@ -444,6 +481,22 @@ window.onload = function () {
             }
 
             return inside;
+        },
+
+        /**
+         * Remove object from game
+         * @param object
+         * @param [type]
+         */
+        destroyObject: function (object, type) {
+            var array = type ? this[type+'s'] : this.objects;
+            var i;
+
+            for (i = 0; i < array.length; i += 1) {
+                if (array[i] === object) {
+                    array.splice(i, 1);
+                }
+            }
         },
 
         // update FPS counter
