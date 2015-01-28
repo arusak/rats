@@ -234,9 +234,29 @@ window.onload = function () {
         },
 
         consume: function (item) {
+            var self = this;
+
             this.sleep(60, function () {
+                if (item.type === 'poison') {
+                    self.die();
+                }
                 item.destroy();
             });
+        },
+
+        die: function () {
+            var self = this;
+
+            self.dead = true;
+            self.color = 'rgba(255,255,255,0.5)';
+
+            this.sleep(300, function () {
+                self.destroy();
+            });
+        },
+
+        destroy: function () {
+            game.destroyObject(this, 'rat');
         },
 
         /**
@@ -402,6 +422,7 @@ window.onload = function () {
             this.gender = prob(0.5) ? 'MALE' : 'FEMALE';
             this.color = this.gender === 'MALE' ? '#69f' : '#f99';
 
+            this.type = 'rat';
         }
     });
 
@@ -425,6 +446,7 @@ window.onload = function () {
         init: function (x, y) {
             this.color = '#0f0';
             this.consumable = true;
+            this.type = 'poison';
             this.initItem(x, y);
         }
     });
@@ -489,12 +511,24 @@ window.onload = function () {
          * @param [type]
          */
         destroyObject: function (object, type) {
-            var array = type ? this[type+'s'] : this.objects;
             var i;
+            var array;
 
+            if (type) {
+                array = this[type + 's'];
+                for (i = 0; i < array.length; i += 1) {
+                    if (array[i] === object) {
+                        array.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+
+            array = this.objects;
             for (i = 0; i < array.length; i += 1) {
                 if (array[i] === object) {
                     array.splice(i, 1);
+                    break;
                 }
             }
         },
